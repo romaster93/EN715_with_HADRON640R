@@ -82,5 +82,3 @@ HADRON 640R 같은경우에는 /dev 를 확인했을때 정상 연결시에 vide
 열화상카메라 명령어 <br>
 
     gst-launch-1.0 v4l2src device=/dev/video1 ! 'video/x-raw, width=640, height=512, framerate=30/1' ! xvimagesink
-
-ddddd
