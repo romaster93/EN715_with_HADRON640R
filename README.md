@@ -82,3 +82,82 @@ HADRON 640R 같은경우에는 /dev 를 확인했을때 정상 연결시에 vide
 열화상카메라 명령어 <br>
 
     gst-launch-1.0 v4l2src device=/dev/video1 ! 'video/x-raw, width=640, height=512, framerate=30/1' ! xvimagesink
+
+
+
+### 4.  **More setting for memory** <br><br>
+최신 jetson 시리즈를 사용하는사람에게는 거의 해당되지 않는 내용이다. <br>
+해당 step은 jetson nano를 사용하다보니 build 하거나 slam을 구동할 때 계속해서 memory 부족 현상이 발생하는데, 이를 해결해주기 위한 방법이다. <br>
+필요한 사람만 참고하면 될 것 같다. <br>
+
+jetson nano는 램이 4기가인데 이걸로는 요즘 작업이 거의 불가능하다. (특히 메모리를 많이 차지하는 시스템을 구동할때) <br>
+
+2가지를 진행하는데 첫번째는 swap 메모리 공간을 넉넉하게 만들어주는것이고, 두번째는 jetson nano에서 사용하는 memory stack size를 늘려주는 작업을 진행한다.<br>
+
+### 4.1  **Swap memory** <br><br>
+
+본인은 sd card의 용량을 1tb를 사용하고 있기때문에 여유 공간이 매우 많은 상황이었다. <br>
+따라서 swap 메모리를 무식하게 많이 만들어도 상관없었지만 그게 아닌 사용자들은 자신의 여유 공간에 맞게 설정하기 바란다. <br>
+
+swap memory 활성화 여부 확인 <br>
+
+    free -m    
+
+swapon 명령으로 스왑 상태를 표시 <br>
+
+    swapon -s  
+
+dd 명령어를 통해서 swap file을 생성해준다. (나는 어짜피 공간이 남아돌아서 30G를 만들었는데 이러면 시간이 꽤 오래걸린다.) <br>
+
+    sudo dd if=/dev/zero of=/var/swapfile bs=1G count=30   
+
+mkswap 명령어를 통해서 초기화 진행<br>
+
+    sudo mkswap /var/swapfile
+
+root 사용자 권한 변경<br>
+
+    sudo chmod 600 /var/swapfile
+
+Jetson nano 부팅할때 자동으로 마운트 시켜주는 작업 진행 <br>
+
+    sudo vim /etc/fstab
+
+아래 문장을 파일 맨 아래에 추가한다. <br>
+
+    /var/swapfile   /none   swap    swap    0 0
+
+swapon 명령으로 활성화 진행 <br>
+
+    sudo swapon /var/swapfile
+
+free 명령으로 스왑이 확장된걸 확인 (만약에 확인이 안되면 재부팅 진행) <br>
+
+    free -m 
+
+swapon 명령으로 스왑의 상태를 확인해준다. <br>
+
+    swapon -s
+
+
+### 4.2  **Jetson nano memory stack size unlock** <br><br>
+
+아무리 swap 메모리를 통해서 메모리 용량을 늘려줘도 설정값을 바꾸지 않으면 기존 내장 메모리만 사용하기 때문에 의미가 없다. <br>
+
+따라서 jetson nano의 설정값을 바꿔줘야한다. <br>
+
+    cd /etc/security
+    sudo vim limits.conf
+
+해당 파일에 들어가면 마지막 부분에 아래와 같은 parameter가 있는데 전부 unlimited로 변경해주면 된다. <br>
+
+    nvidia hard stack unlimited
+    nvidia soft stack unlimited
+    ubuntu hard stack unlimited
+    ubuntu soft stack unlimited
+    root hard stack unlimited
+    root soft stack unlimited
+
+
+
+
